@@ -20,7 +20,7 @@ class TestRedisService:
     @pytest.fixture(scope="module")
     def redis_service(self):
         wait_strategy = CompositeWaitStrategy(
-            LogMessageWaitStrategy(r"Specmatic Redis Mock has started on .*:\d+")
+            LogMessageWaitStrategy(r"Specmatic Redis has started on .*:\d+")
         ).with_startup_timeout(30)
         container = (
             DockerContainer("specmatic/specmatic-redis:latest")
