@@ -1,6 +1,8 @@
-sources:
-  - provider: git
-    repository: https://github.com/specmatic/specmatic-order-contracts.git
+version: 2
+contracts:
+  - git:
+      branch: main
+      url: https://github.com/specmatic/specmatic-order-contracts.git
     provides:
       - io/specmatic/examples/store/openapi/product_search_bff_v4.yaml
     consumes:

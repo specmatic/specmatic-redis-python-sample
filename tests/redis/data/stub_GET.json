@@ -1,0 +1,17 @@
+{
+    "http-request": {
+        "method": "POST",
+        "path": "/redis",
+        "body": {
+            "operation": "get",
+            "params": ["my_key"]
+        }
+    },
+    "http-response": {
+        "status": 200,
+        "body": {
+            "type": "string",
+            "value": "HELLO"
+        }
+    }
+}

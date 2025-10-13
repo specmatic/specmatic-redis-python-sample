@@ -12,7 +12,7 @@ APP_PORT = 8000
 
 STUB_HOST = "127.0.0.1"
 STUB_PORT = 8080
-STUB_DATA_DIR = ROOT_DIR + "tests/data"
+STUB_DATA_DIR = ROOT_DIR + "tests/contract/data"
 
 SPECMATIC_CONFIG_FILE_PATH = ROOT_DIR + '/specmatic.yaml'
 

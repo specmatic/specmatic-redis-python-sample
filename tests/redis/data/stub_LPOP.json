@@ -1,0 +1,17 @@
+{
+    "http-request": {
+        "method": "POST",
+        "path": "/redis",
+        "body": {
+            "operation": "lpop",
+            "params": ["my_queue"]
+        }
+    },
+    "http-response": {
+        "status": 200,
+        "body": {
+            "type": "string",
+            "value": "ORDER_1"
+        }
+    }
+}
