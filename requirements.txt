@@ -1,0 +1,6 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+requests>=2.31
+pytest>=7.4
+python-dotenv>=1.0
+specmatic==2.24.0

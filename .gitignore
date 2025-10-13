@@ -1,0 +1,16 @@
+.DS_Store
+*.idea
+.specmatic
+junit_report
+.pytest_cache
+__pycache__
+specmatic.jar
+specmatic_python.egg-info/*
+dist/*
+.venv
+venv
+build
+.vscode
+specmatic.egg-info
+.coverage
+Test-junit-jupiter.xml
