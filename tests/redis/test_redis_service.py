@@ -1,9 +1,10 @@
 import logging
+import warnings
 
 import pytest
 from redis import Redis
 from testcontainers.core.container import DockerContainer
-from testcontainers.core.wait_strategies import LogMessageWaitStrategy, CompositeWaitStrategy
+from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
 from app.redis_service import RedisService
 from definitions import ROOT_DIR
@@ -18,14 +19,14 @@ logger.setLevel(logging.DEBUG)
 
 class TestRedisService:
 
-    @pytest.fixture(scope="module")
+    @pytest.fixture(scope="class")
     def redis_service(self):
         container = (
             DockerContainer("specmatic/specmatic-redis:latest")
             .with_command(f"virtualize --host {REDIS_HOST} --port {REDIS_PORT} --data {STUB_DATA_DIR}")
             .with_exposed_ports(REDIS_PORT)
             .with_volume_mapping(STUB_DATA_DIR, STUB_DATA_DIR)
-            .waiting_for(LogMessageWaitStrategy(r"Specmatic Redis has started on .*:\d+"))
+            .waiting_for(LogMessageWaitStrategy(r"Specmatic Redis has started on .*:\d+").with_startup_timeout(10))
         )
 
         redis_client = None
@@ -57,5 +58,6 @@ def print_container_logs(container):
     stdout, stderr = container.get_logs()
     logger.info("=== STDOUT ===")
     logger.info(stdout.decode("utf-8"))
-    logger.info("=== STDERR ===")
-    logger.info(stderr.decode("utf-8"))
+    if stderr.decode("utf-8") != "":
+        logger.info("=== STDERR ===")
+        logger.info(stderr.decode("utf-8"))
