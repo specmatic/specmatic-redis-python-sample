@@ -1,5 +1,4 @@
 import logging
-import warnings
 
 import pytest
 from redis import Redis
@@ -16,13 +15,14 @@ STUB_DATA_DIR = ROOT_DIR + "/tests/redis/data"
 logger = logging.getLogger("specmatic.redis.mock")
 logger.setLevel(logging.DEBUG)
 
+SPECMATIC_REDIS_VERSION = '0.9.4'
 
 class TestRedisService:
 
     @pytest.fixture(scope="class")
     def redis_service(self):
         container = (
-            DockerContainer("specmatic/specmatic-redis:latest")
+            DockerContainer(f"specmatic/specmatic-redis:{SPECMATIC_REDIS_VERSION}")
             .with_command(f"virtualize --host {REDIS_HOST} --port {REDIS_PORT} --data {STUB_DATA_DIR}")
             .with_exposed_ports(REDIS_PORT)
             .with_volume_mapping(STUB_DATA_DIR, STUB_DATA_DIR)
