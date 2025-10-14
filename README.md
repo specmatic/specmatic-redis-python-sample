@@ -105,3 +105,89 @@ Specmatic Redis has started on 0.0.0.0:6379
 ```
 
 Ensure `STUB_DATA_DIR` is an **absolute path** and contains your stub files.
+
+
+## Running Contract Tests
+Here’s a clean, professional README-ready write-up you can use to document that block of code:
+
+---
+
+## 🧪 Running Contract Tests with Specmatic (FastAPI Example)
+
+This section demonstrates how to **run contract tests** for a FastAPI application using [Specmatic](https://specmatic.io/).
+Specmatic validates your app against its **OpenAPI contracts** and provides **API coverage reporting** and **stubbed interactions** for end-to-end testing.
+
+```python
+import os
+from specmatic.core.specmatic import Specmatic
+from definitions import ROOT_DIR
+from app.main import app as fastapi_app
+
+APP_HOST = "127.0.0.1"
+APP_PORT = 8000
+
+STUB_HOST = "127.0.0.1"
+STUB_PORT = 8080
+STUB_DATA_DIR = ROOT_DIR + "tests/contract/data"
+
+SPECMATIC_CONFIG_FILE_PATH = ROOT_DIR + '/specmatic.yaml'
+
+os.environ["SPECMATIC_GENERATIVE_TESTS"] = "true"
+
+
+class TestContract:
+    pass
+
+
+(
+    Specmatic()
+    .with_specmatic_config_file_path(SPECMATIC_CONFIG_FILE_PATH)
+    .with_stub(STUB_HOST, STUB_PORT, args=[f"--data={STUB_DATA_DIR}"])
+    .with_asgi_app('app.main:app', APP_HOST, APP_PORT)
+    .test_with_api_coverage_for_fastapi_app(TestContract, fastapi_app)
+    .run()
+)
+
+os.environ["SPECMATIC_GENERATIVE_TESTS"] = "false"
+```
+
+---
+
+### ⚙️ What This Does
+
+| Step                               | Description                                                                                                                                                                                                                            |
+| ---------------------------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Environment setup**              | Defines the host and port for both the **FastAPI app** and the **Specmatic stub**. The stub uses data from `tests/contract/data` to simulate downstream dependencies.                                                                  |
+| **Specmatic configuration**        | Points to your central `specmatic.yaml` file, which defines service contracts and stub mappings.                                                                                                                                       |
+| **Generative tests mode**          | Enables Specmatic’s *generative testing* mode (`SPECMATIC_GENERATIVE_TESTS=true`) to generate resilience tests.                                                                                                                        |
+| **ASGI app registration**          | `.with_asgi_app('app.main:app', APP_HOST, APP_PORT)` registers your FastAPI app for validation. Here, `app.main:app` refers to the `app` object inside the `main.py` module.                                                           |
+| **Stub registration**              | `.with_stub(STUB_HOST, STUB_PORT, args=[f"--data={STUB_DATA_DIR}"])` launches the Specmatic stub locally to serve mock responses from the specified stub data directory.                                                               |
+| **Contract testing with coverage** | `.test_with_api_coverage_for_fastapi_app(TestContract, fastapi_app)` runs Specmatic tests against your FastAPI app and reports API coverage by spinning up a lightweight coverage server (which parts of the contract were exercised). |
+| **Clean-up**                       | Once the tests complete, the environment variable is reset to disable generative testing.                                                                                                                                              |
+
+---
+
+### 🧩 Typical Workflow
+
+1. Ensure your `specmatic.yaml` file points to the correct contract specs.
+2. Place your stubbed response files under:
+
+   ```
+   tests/contract/data/
+   ```
+3. Specmatic will:
+
+   * Start the stub server.
+   * Boot your FastAPI app.
+   * Execute contract-based test cases.
+   * Report mismatches and coverage results.
+---
+
+### 🧠 Notes
+* `app.main:app` follows the same syntax as `uvicorn main:app` — it references the `app` object defined inside `main.py`.
+* `SPECMATIC_GENERATIVE_TESTS=true` enables generation of resilience tests.
+* Keep `STUB_DATA_DIR` paths **absolute** to avoid issues with volume mounts or relative references.
+* API coverage output helps ensure all contract endpoints are implemented and validated.
+---
+
+
