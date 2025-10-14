@@ -5,7 +5,7 @@ import pytest
 from specmatic.core.specmatic import Specmatic
 from definitions import ROOT_DIR
 
-from app import app as fastapi_app
+from app.main import app as fastapi_app
 
 APP_HOST = "127.0.0.1"
 APP_PORT = 8000
@@ -25,16 +25,11 @@ class TestContract:
 
 (
     Specmatic()
-    .with_specmatic_config_file_path(str(SPECMATIC_CONFIG_FILE_PATH))
-    .with_project_root(str(ROOT_DIR))
-    .with_stub(
-        STUB_HOST,
-        STUB_PORT,
-        args=[f"--data={STUB_DATA_DIR}"]
-    ).with_asgi_app('app:app', APP_HOST, APP_PORT)
-    .test_with_api_coverage_for_fastapi_app(
-        TestContract, fastapi_app
-    ).run()
+    .with_specmatic_config_file_path(SPECMATIC_CONFIG_FILE_PATH)
+    .with_stub(STUB_HOST, STUB_PORT, args=[f"--data={STUB_DATA_DIR}"])
+    .with_asgi_app('app.main:app', APP_HOST, APP_PORT)
+    .test_with_api_coverage_for_fastapi_app(TestContract, fastapi_app)
+    .run()
 )
 
 os.environ["SPECMATIC_GENERATIVE_TESTS"] = "false"

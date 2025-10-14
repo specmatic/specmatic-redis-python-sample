@@ -5,6 +5,8 @@ from fastapi.responses import PlainTextResponse
 dummy = APIRouter()
 
 
+# Endpoints not present in the specification
+
 @dummy.get("/orders/{id}")
 def get_order(id):
     return PlainTextResponse("dummy")
