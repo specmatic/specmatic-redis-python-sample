@@ -40,4 +40,27 @@ pytest tests -v -s
 ```
 
 ## Setting stubs for Specmatic Redis
-Specmatic Redis takes a command line argument which contains 
+Specmatic Redis takes an argument 'data' which is expected to be a directory with stub json files. 
+The stub files are expected to have this structure:
+
+```
+    {
+    "http-request": {
+        "method": "POST",
+        "path": "/redis",
+        "body": {
+            "operation": "get",
+            "params": ["my_key"]
+        }
+    },
+    "http-response": {
+        "status": 200,
+        "body": {
+            "type": "string",
+            "value": "HELLO"
+        }
+    }
+}
+```
+
+**NOTE:** The operation value must be in lowercase.
