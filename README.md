@@ -142,7 +142,7 @@ class TestContract:
 (
     Specmatic()
     .with_specmatic_config_file_path(SPECMATIC_CONFIG_FILE_PATH)
-    .with_stub(MOCK_HOST, MOCK_PORT, args=[f"--data={TEST_DATA_DIR}"])
+    .with_mock(MOCK_HOST, MOCK_PORT, args=[f"--data={TEST_DATA_DIR}"])
     .with_asgi_app('app.main:app', APP_HOST, APP_PORT)
     .test_with_api_coverage_for_fastapi_app(TestContract, fastapi_app)
     .run()
@@ -161,7 +161,7 @@ os.environ["SPECMATIC_GENERATIVE_TESTS"] = "false"
 | **Specmatic configuration**        | Points to your central `specmatic.yaml` file, which defines service contracts and dependencies.                                                                                                                                        |
 | **Generative tests mode**          | Enables Specmatic’s *generative testing* mode (`SPECMATIC_GENERATIVE_TESTS=true`) to generate resilience tests.                                                                                                                        |
 | **ASGI app registration**          | `.with_asgi_app('app.main:app', APP_HOST, APP_PORT)` registers your FastAPI app for validation. Here, `app.main:app` refers to the `app` object inside the `main.py` module.                                                           |
-| **Mock registration**              | `.with_stub(MOCK_HOST, MOCK_PORT, args=[f"--data={TEST_DATA_DIR}"])` launches the Specmatic mock locally to serve mock responses from the specified test data directory.                                                               |
+| **Mock registration**              | `.with_mock(MOCK_HOST, MOCK_PORT, args=[f"--data={TEST_DATA_DIR}"])` launches the Specmatic mock locally to serve mock responses from the specified test data directory.                                                               |
 | **Contract testing with coverage** | `.test_with_api_coverage_for_fastapi_app(TestContract, fastapi_app)` runs Specmatic tests against your FastAPI app and reports API coverage by spinning up a lightweight coverage server (which parts of the contract were exercised). |
 | **Clean-up**                       | Once the tests complete, the environment variable is reset to disable generative testing.                                                                                                                                              |
 

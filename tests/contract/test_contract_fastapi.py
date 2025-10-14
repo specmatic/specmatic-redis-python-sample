@@ -10,9 +10,9 @@ from app.main import app as fastapi_app
 APP_HOST = "127.0.0.1"
 APP_PORT = 8000
 
-STUB_HOST = "127.0.0.1"
-STUB_PORT = 8080
-STUB_DATA_DIR = ROOT_DIR + "tests/contract/data"
+MOCK_HOST = "127.0.0.1"
+MOCK_PORT = 8080
+TEST_DATA_DIR = ROOT_DIR + "tests/contract/data"
 
 SPECMATIC_CONFIG_FILE_PATH = ROOT_DIR + '/specmatic.yaml'
 
@@ -26,7 +26,7 @@ class TestContract:
 (
     Specmatic()
     .with_specmatic_config_file_path(SPECMATIC_CONFIG_FILE_PATH)
-    .with_stub(STUB_HOST, STUB_PORT, args=[f"--data={STUB_DATA_DIR}"])
+    .with_mock(MOCK_HOST, MOCK_PORT, args=[f"--data={TEST_DATA_DIR}"])
     .with_asgi_app('app.main:app', APP_HOST, APP_PORT)
     .test_with_api_coverage_for_fastapi_app(TestContract, fastapi_app)
     .run()
