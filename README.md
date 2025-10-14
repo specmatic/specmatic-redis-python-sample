@@ -63,7 +63,7 @@ The test data files are expected to have this structure:
 }
 ```
 
-**NOTE:** The operation value must be in lowercase.
+**NOTE:** The operation value (ex: `get`) must be in lowercase.
 
 ## Running Specmatic Redis in Tests (with Testcontainers)
 
