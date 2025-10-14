@@ -10,12 +10,12 @@ from definitions import ROOT_DIR
 
 REDIS_HOST = "0.0.0.0"
 REDIS_PORT = 6379
-STUB_DATA_DIR = ROOT_DIR + "/tests/redis/data"
+TEST_DATA_DIR = ROOT_DIR + "/tests/redis/data"
 
 logger = logging.getLogger("specmatic.redis.mock")
 logger.setLevel(logging.DEBUG)
 
-SPECMATIC_REDIS_VERSION = '0.9.4'
+SPECMATIC_REDIS_VERSION = 'latest'
 
 class TestRedisService:
 
@@ -23,9 +23,9 @@ class TestRedisService:
     def redis_service(self):
         container = (
             DockerContainer(f"specmatic/specmatic-redis:{SPECMATIC_REDIS_VERSION}")
-            .with_command(f"virtualize --host {REDIS_HOST} --port {REDIS_PORT} --data {STUB_DATA_DIR}")
+            .with_command(f"virtualize --host {REDIS_HOST} --port {REDIS_PORT} --data {TEST_DATA_DIR}")
             .with_exposed_ports(REDIS_PORT)
-            .with_volume_mapping(STUB_DATA_DIR, STUB_DATA_DIR)
+            .with_volume_mapping(TEST_DATA_DIR, TEST_DATA_DIR)
             .waiting_for(LogMessageWaitStrategy(r"Specmatic Redis has started on .*:\d+").with_startup_timeout(10))
         )
 
