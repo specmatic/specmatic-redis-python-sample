@@ -40,7 +40,7 @@ jobs:
       working-directory: main
       run: coverage html -d coverage-report
     - name: Upload coverage report
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: main/coverage-report
