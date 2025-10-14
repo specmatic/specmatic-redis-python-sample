@@ -64,3 +64,44 @@ The stub files are expected to have this structure:
 ```
 
 **NOTE:** The operation value must be in lowercase.
+
+## Running Specmatic Redis in Tests (with Testcontainers)
+
+Use the containerized Specmatic Redis Mock to spin up an ephemeral Redis-like stub for your tests. The snippet below starts the image, mounts your stub data, exposes the port, and **waits until the mock is ready** (detected via a log line) before the test proceeds.
+
+```python
+from testcontainers.core.container import DockerContainer
+from testcontainers.core.wait_strategies import LogMessageWaitStrategy
+
+
+SPECMATIC_REDIS_VERSION = "latest"  # or a pinned version like "0.9.4"
+REDIS_HOST = "0.0.0.0"
+REDIS_PORT = 6379
+STUB_DATA_DIR = "/absolute/path/to/test/data"
+
+container = (
+    DockerContainer(f"specmatic/specmatic-redis:{SPECMATIC_REDIS_VERSION}")
+    .with_command(f"virtualize --host {REDIS_HOST} --port {REDIS_PORT} --data {STUB_DATA_DIR}")
+    .with_exposed_ports(REDIS_PORT)
+    .with_volume_mapping(STUB_DATA_DIR, STUB_DATA_DIR)
+    .waiting_for(LogMessageWaitStrategy(r"Specmatic Redis has started on .*:\d+").with_startup_timeout(10))
+)
+```
+
+### What this does
+
+* **Image**: `specmatic/specmatic-redis:{SPECMATIC_REDIS_VERSION}` – pulls and runs the Specmatic Redis Mock.
+* **Command**: `virtualize --host ... --port ... --data ...` – launches Specmatic Redis and points it to your **stub dataset** (files that define responses/fixtures).
+* **Port exposure**: `.with_exposed_ports(REDIS_PORT)` – publishes the Redis port to the host so your test client can connect.
+* **Volume mapping**: `.with_volume_mapping(STUB_DATA_DIR, STUB_DATA_DIR)` – mounts your local stub directory into the container at the **same** path (keeps file references simple).
+* **Readiness check**: `LogMessageWaitStrategy(...)` – blocks test execution until the container logs the **ready** line.
+
+### Readiness log pattern
+
+The regex `r"Specmatic Redis has started on .*:\d+"` matches a line like:
+
+```
+Specmatic Redis has started on 0.0.0.0:6379
+```
+
+Ensure `STUB_DATA_DIR` is an **absolute path** and contains your stub files.
