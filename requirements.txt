@@ -4,3 +4,4 @@ python-dotenv>=1.0
 specmatic==2.24.0
 redis==6.4.0
 testcontainers==4.13.2
+coverage==7.10.7
