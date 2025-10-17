@@ -2,45 +2,70 @@ name: CI with contracts run through command line
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     strategy:
       matrix:
-        os: [ ubuntu-latest]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-      with:
-        path: main
-    - name: Set up JRE 17
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        java-package: 'jre'
-    - name: Setup python
-      uses: actions/setup-python@v4
-      with:
-          python-version: '3.11'
-          cache: 'pip'
-    - name: Run pip install
-      working-directory: main
-      run: pip install -r requirements.txt
-    - name: Run contract as tests with Specmatic Python
-      working-directory: main
-      run: coverage run --branch -m pytest tests -v -s --junitxml contract-test-reports/TEST-junit-jupiter.xml
-    - name: Publish contract test report
-      uses: mikepenz/action-junit-report@v3
-      if: always()
-      with:
-        report_paths: '**/contract-test-reports/TEST-*.xml'
-    - name: Generate coverage report
-      working-directory: main
-      run: coverage html -d coverage-report
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: main/coverage-report
+      - uses: actions/checkout@v2
+
+      - name: Set up JRE 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "17"
+          java-package: "jre"
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Run pip install
+        run: pip install -r requirements.txt
+
+      - name: Run contract as tests with Specmatic Python
+        run: coverage run --branch -m pytest tests -v -s --junitxml contract-test-reports/TEST-junit-jupiter.xml
+
+      - name: Save Specmatic license
+        if: false
+        # if: runner.os == 'Linux'
+        run: |
+          mkdir -p ~/.specmatic
+          echo "${{ secrets.SPECMATIC_LICENSE_KEY }}" > ~/.specmatic/specmatic-license.txt
+
+      - name: Run Specmatic Insights Build Reporter
+        if: false
+        # if: runner.os == 'Linux'
+        run: |
+          docker run \
+            -v ${{ github.workspace }}:/workspace \
+            -v ~/.specmatic:/root/.specmatic \
+            -w /workspace \
+            specmatic/specmatic-reporter \
+            send-report \
+            --metadata build_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }} \
+            --branch-name ${{ github.ref_name }} \
+            --repo-name ${{ github.event.repository.name }} \
+            --repo-id ${{ github.repository_id }} \
+            --repo-url ${{ github.event.repository.html_url }}
+
+      - name: Publish contract test report
+        uses: mikepenz/action-junit-report@v3
+        if: always()
+        with:
+          report_paths: "**/contract-test-reports/TEST-*.xml"
+
+      - name: Generate coverage report
+        run: coverage html -d coverage-report
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report
