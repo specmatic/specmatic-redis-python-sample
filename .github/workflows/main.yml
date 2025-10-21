@@ -33,15 +33,13 @@ jobs:
         run: coverage run --branch -m pytest tests -v -s --junitxml contract-test-reports/TEST-junit-jupiter.xml
 
       - name: Save Specmatic license
-        if: false
-        # if: runner.os == 'Linux'
+        if: runner.os == 'Linux'
         run: |
           mkdir -p ~/.specmatic
           echo "${{ secrets.SPECMATIC_LICENSE_KEY }}" > ~/.specmatic/specmatic-license.txt
 
       - name: Run Specmatic Insights Build Reporter
-        if: false
-        # if: runner.os == 'Linux'
+        if: runner.os == 'Linux'
         run: |
           docker run \
             -v ${{ github.workspace }}:/workspace \
