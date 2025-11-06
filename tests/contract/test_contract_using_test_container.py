@@ -63,9 +63,10 @@ def stub_container():
         .waiting_for(HttpWaitStrategy(HTTP_STUB_PORT, path="/actuator/health").with_method("GET").for_status_code(200))
     )
     container.start()
-    stream_container_logs(container, name="specmatic-stub")
+    thread = stream_container_logs(container, name="specmatic-stub")
     yield container
     container.stop()
+    thread.join()
 
 
 @pytest.fixture(scope="module")
@@ -82,9 +83,10 @@ def test_container():
         .waiting_for(LogMessageWaitStrategy("Tests run:"))
     )
     container.start()
-    stream_container_logs(container, name="specmatic-test")
+    thread = stream_container_logs(container, name="specmatic-test")
     yield container
     container.stop()
+    thread.join()
 
 
 @pytest.mark.skipif(
