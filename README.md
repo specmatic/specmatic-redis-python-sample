@@ -1,11 +1,10 @@
 # Specmatic FastAPI with Redis Demo
 
-This is a Python implementation of the [Specmatic Order BFF Service](https://github.com/znsio/specmatic-order-ui)
-project.  
+This is a Python implementation of the [Specmatic Order BFF Service](https://github.com/znsio/specmatic-order-bff-java) project.
 The implementation is based on the [FastApi](https://fastapi.tiangolo.com/) framework.
 
 The open api contract for the services is defined in
-the [Specmatic Central Contract Repository](https://github.com/znsio/specmatic-order-contracts/blob/main/in/specmatic/examples/store/api_order_v1.yaml)
+the [Specmatic Central Contract Repository](https://github.com/specmatic/specmatic-order-contracts/blob/main/io/specmatic/examples/store/openapi/product_search_bff_v4.yaml)
 
 The bff service internally calls the order api service (on port 8080).
 
@@ -17,19 +16,43 @@ while mocking out the order api service at the same time.
 
 2. Demonstrate how to mock out the Redis server using Specmatic Redis Mock and Test Containers.
 
-
 ## Prerequisites
-
 - Python 3.11+ 
 - JRE 17+. 
+- Docker Desktop
 
-1. Create a virtual environment and install all dependencies:
+1. ### Create a virtual environment named ".venv" by executing the following command in the terminal from the project's root directory
 
-   ```bash
-   python -m venv .venv
+   ```shell
+    python -m venv .venv
+    ```
+
+2. ### Activate virtual environment by executing
+
+* **on MacOS and Linux**
+
+   ```shell
    source .venv/bin/activate
-   pip install -r requirements.txt
    ```
+
+* **on Windows CMD**
+
+  ```cmd
+  .venv\Scripts\activate.bat
+  ```
+
+* **on Windows Powershell (you may need to adjust the ExecutionPolicy)**
+
+  ```powershell
+  .\.venv\Scripts\Activate.ps1
+  ```
+
+3. ### Install Dependencies
+
+To install all necessary dependencies for this project, navigate to the project's root directory in your terminal and execute
+```shell
+pip install -r requirements.txt
+```
 
 ## Running the contract suite
 

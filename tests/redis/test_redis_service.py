@@ -10,7 +10,7 @@ from definitions import ROOT_DIR
 
 REDIS_HOST = "0.0.0.0"
 REDIS_PORT = 6379
-TEST_DATA_DIR = ROOT_DIR + "/tests/redis/data"
+TEST_DATA_DIR = "/tests/redis/data"
 
 logger = logging.getLogger("specmatic.redis.mock")
 logger.setLevel(logging.DEBUG)
@@ -25,7 +25,7 @@ class TestRedisService:
             DockerContainer(f"specmatic/specmatic-redis:{SPECMATIC_REDIS_VERSION}")
             .with_command(f"virtualize --host {REDIS_HOST} --port {REDIS_PORT} --data {TEST_DATA_DIR}")
             .with_exposed_ports(REDIS_PORT)
-            .with_volume_mapping(TEST_DATA_DIR, TEST_DATA_DIR)
+            .with_volume_mapping(ROOT_DIR + TEST_DATA_DIR, TEST_DATA_DIR)
             .waiting_for(LogMessageWaitStrategy(r"Specmatic Redis has started on .*:\d+").with_startup_timeout(10))
         )
 
@@ -35,7 +35,7 @@ class TestRedisService:
             container.start()
             print_container_logs(container)
             port = container.get_exposed_port(REDIS_PORT)
-            redis_client = Redis(host=REDIS_HOST, port=port, decode_responses=True)
+            redis_client = Redis(host="localhost", port=port, decode_responses=True)
             service = RedisService(redis_client)
             yield service
 
