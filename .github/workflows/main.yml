@@ -29,17 +29,17 @@ jobs:
       - name: Run pip install
         run: pip install -r requirements.txt
 
-      - name: Run contract as tests with Specmatic Python
-        run: coverage run --branch -m pytest tests -v -s --junitxml contract-test-reports/TEST-junit-jupiter.xml
-
       - name: Save Specmatic license
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && github.ref == 'refs/heads/main'
         run: |
           mkdir -p ~/.specmatic
           echo "${{ secrets.SPECMATIC_LICENSE_KEY }}" > ~/.specmatic/specmatic-license.txt
 
+      - name: Run contract as tests with Specmatic Python
+        run: coverage run --branch -m pytest tests -v -s --junitxml contract-test-reports/TEST-junit-jupiter.xml
+
       - name: Run Specmatic Insights Build Reporter
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && github.ref == 'refs/heads/main'
         run: |
           docker run \
             -v ${{ github.workspace }}:/workspace \
