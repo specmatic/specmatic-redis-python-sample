@@ -2,6 +2,6 @@ fastapi>=0.110
 pytest>=7.4
 python-dotenv>=1.0
 specmatic==2.34.3
-redis==7.0.1
+redis==7.1.0
 testcontainers==4.13.2
 coverage==7.11.0
