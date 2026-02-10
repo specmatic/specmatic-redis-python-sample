@@ -104,7 +104,7 @@ TEST_DATA_DIR = "/absolute/path/to/test/data"
 
 container = (
     DockerContainer(f"specmatic/specmatic-redis:{SPECMATIC_REDIS_VERSION}")
-    .with_command(f"virtualize --host {REDIS_HOST} --port {REDIS_PORT} --data {TEST_DATA_DIR}")
+    .with_command(f"mock --host {REDIS_HOST} --port {REDIS_PORT} --data {TEST_DATA_DIR}")
     .with_exposed_ports(REDIS_PORT)
     .with_volume_mapping(TEST_DATA_DIR, TEST_DATA_DIR)
     .waiting_for(LogMessageWaitStrategy(r"Specmatic Redis has started on .*:\d+").with_startup_timeout(10))
@@ -114,7 +114,7 @@ container = (
 ### What this does
 
 * **Image**: `specmatic/specmatic-redis:{SPECMATIC_REDIS_VERSION}` – pulls and runs the Specmatic Redis Mock.
-* **Command**: `virtualize --host ... --port ... --data ...` – launches Specmatic Redis and points it to your **test dataset** (files that define responses/fixtures).
+* **Command**: `mock --host ... --port ... --data ...` – launches Specmatic Redis and points it to your **test dataset** (files that define responses/fixtures).
 * **Port exposure**: `.with_exposed_ports(REDIS_PORT)` – publishes the Redis port to the host so your test client can connect.
 * **Volume mapping**: `.with_volume_mapping(TEST_DATA_DIR, TEST_DATA_DIR)` – mounts your local test data directory into the container at the **same** path (keeps file references simple).
 * **Readiness check**: `LogMessageWaitStrategy(...)` – blocks test execution until the container logs the **ready** line.

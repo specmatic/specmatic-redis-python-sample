@@ -55,7 +55,7 @@ def stub_container():
     build_reports_path = Path("build/reports/specmatic").resolve()
     container = (
         DockerContainer("specmatic/specmatic")
-        .with_command(["virtualize", "--examples=examples", f"--port={HTTP_STUB_PORT}"])
+        .with_command(["mock", "--examples=examples", f"--port={HTTP_STUB_PORT}"])
         .with_bind_ports(HTTP_STUB_PORT, HTTP_STUB_PORT)
         .with_volume_mapping(examples_path, "/usr/src/app/examples", mode="ro")
         .with_volume_mapping(specmatic_yaml_path, "/usr/src/app/specmatic.yaml", mode="ro")
