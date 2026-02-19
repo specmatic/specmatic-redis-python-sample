@@ -1,3 +1,4 @@
-import os
+import pathlib
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT_PATH = pathlib.Path(__file__).resolve().parent
+PROJECT_ROOT = str(PROJECT_ROOT_PATH)

@@ -6,7 +6,7 @@ from testcontainers.core.container import DockerContainer
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
 from app.redis_service import RedisService
-from definitions import ROOT_DIR
+from definitions import PROJECT_ROOT
 
 REDIS_HOST = "0.0.0.0"
 REDIS_PORT = 6379
@@ -23,9 +23,9 @@ class TestRedisService:
     def redis_service(self):
         container = (
             DockerContainer(f"specmatic/specmatic-redis:{SPECMATIC_REDIS_VERSION}")
-            .with_command(f"mock --host {REDIS_HOST} --port {REDIS_PORT} --data {TEST_DATA_DIR}")
+            .with_command(f"virtualize --host {REDIS_HOST} --port {REDIS_PORT} --data {TEST_DATA_DIR}")
             .with_exposed_ports(REDIS_PORT)
-            .with_volume_mapping(ROOT_DIR + TEST_DATA_DIR, TEST_DATA_DIR)
+            .with_volume_mapping(PROJECT_ROOT + TEST_DATA_DIR, TEST_DATA_DIR)
             .waiting_for(LogMessageWaitStrategy(r"Specmatic Redis has started on .*:\d+").with_startup_timeout(10))
         )
 

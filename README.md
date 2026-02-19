@@ -143,7 +143,7 @@ Specmatic validates your app against its **OpenAPI contracts** and provides **AP
 ```python
 import os
 from specmatic.core.specmatic import Specmatic
-from definitions import ROOT_DIR
+from definitions import PROJECT_ROOT
 from app.main import app as fastapi_app
 
 APP_HOST = "127.0.0.1"
@@ -151,9 +151,9 @@ APP_PORT = 8000
 
 MOCK_HOST = "127.0.0.1"
 MOCK_PORT = 8080
-TEST_DATA_DIR = ROOT_DIR + "tests/contract/data"
+TEST_DATA_DIR = PROJECT_ROOT + "tests/contract/data"
 
-SPECMATIC_CONFIG_FILE_PATH = ROOT_DIR + '/specmatic.yaml'
+SPECMATIC_CONFIG_FILE_PATH = PROJECT_ROOT + '/specmatic.yaml'
 
 os.environ["SPECMATIC_GENERATIVE_TESTS"] = "true"
 
