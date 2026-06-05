@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import JSONResponse
 
 from ..schemas import Product, ProductType
+from ..request_guards import require_json_body
 from ..services import ProductService
 
 products = APIRouter()
@@ -22,7 +23,7 @@ async def find_available_products(
     return JSONResponse(content=products)
 
 
-@products.post("/products", status_code=201)
+@products.post("/products", status_code=201, dependencies=[Depends(require_json_body)])
 async def add_product(data: Product) -> dict[str, int]:
     product = await ProductService.create_product(data)
     return {"id": product["id"]}
