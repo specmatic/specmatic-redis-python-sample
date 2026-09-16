@@ -2,11 +2,12 @@ import multiprocessing
 import os
 import sys
 import threading
+from pathlib import Path
 
 import pytest
 import uvicorn
 from testcontainers.core.container import DockerContainer
-from testcontainers.core.wait_strategies import HttpWaitStrategy, LogMessageWaitStrategy
+from testcontainers.core.wait_strategies import HttpWaitStrategy
 
 from definitions import PROJECT_ROOT_PATH
 
@@ -33,7 +34,7 @@ def stream_container_logs(container: DockerContainer, name=None):
         for line in container.get_wrapped_container().logs(stream=True, follow=True):
             text = line.decode(errors="ignore").rstrip()
             prefix = f"[{name}] " if name else ""
-            print(f"{prefix}{text}")
+            print(f"{prefix}{text}", flush=True)
 
     thread = threading.Thread(target=_stream, daemon=True)
     thread.start()
@@ -45,57 +46,88 @@ def api_service():
     config = uvicorn.Config("app.main:app", host=APPLICATION_HOST, port=APPLICATION_PORT, log_level="info")
     server = UvicornServer(config)
     server.start()
-    yield server
-    server.stop()
+    try:
+        yield server
+    finally:
+        server.stop()
+        server.join(timeout=10)
+        if server.is_alive():
+            server.kill()
+            server.join(timeout=10)
+
+
+
+def specmatic_container():
+    container = DockerContainer("specmatic/specmatic")
+    for name, value in os.environ.items():
+        container.with_env(name, value)
+
+    container = (
+        container
+        .with_volume_mapping(str(Path.home() / ".specmatic"), "/specmatic", mode="ro")
+        .with_env("SPECMATIC_LICENSE_PATH", "/specmatic/specmatic-license.txt")
+        .with_env("JAVA_OPTS", "-Dspecmatic.logging.level=trace -Dspecmatic.logging.stdout.enabled=true")
+        .with_volume_mapping(str(PROJECT_ROOT_PATH), "/usr/src/app", mode="rw")
+        .with_env("GIT_DISCOVERY_ACROSS_FILESYSTEM", "1")
+        .with_env("GIT_CONFIG_COUNT", "1")
+        .with_env("GIT_CONFIG_KEY_0", "safe.directory")
+        .with_env("GIT_CONFIG_VALUE_0", "/usr/src/app")
+        .with_kwargs(
+            extra_hosts={"host.docker.internal": "host-gateway"},
+            working_dir="/usr/src/app",
+        )
+    )
+    return container
 
 
 @pytest.fixture(scope="module")
 def mock_container():
-    examples_path = str(PROJECT_ROOT_PATH / "tests" / "contract"/ "data")
-    specmatic_yaml_path = str(PROJECT_ROOT_PATH / "specmatic.yaml")
-    build_reports_path = str(PROJECT_ROOT_PATH / "build/reports/specmatic")
     container = (
-        DockerContainer("specmatic/specmatic")
+        specmatic_container()
         .with_command(["mock"])
         .with_bind_ports(HTTP_STUB_PORT, HTTP_STUB_PORT)
-        .with_volume_mapping(examples_path, "/usr/src/app/test/data", mode="ro")
-        .with_volume_mapping(specmatic_yaml_path, "/usr/src/app/specmatic.yaml", mode="ro")
-        .with_volume_mapping(build_reports_path, "/usr/src/app/build/reports/specmatic", mode="rw")
         .waiting_for(HttpWaitStrategy(HTTP_STUB_PORT, path="/actuator/health").with_method("GET").for_status_code(200))
     )
-    container.start()
-    thread = stream_container_logs(container, name="specmatic-mock")
-    yield container
-
-    wrapped = container.get_wrapped_container()  # docker SDK container
-
-    # Ask the process to shut down like Ctrl+C
-    wrapped.kill(signal="SIGINT")
-
-    # Then wait up to 30s for it to stop cleanly (and write reports)
-    wrapped.wait(timeout=30)
-
-    thread.join()
+    thread = None
+    try:
+        container.start()
+        thread = stream_container_logs(container, name="specmatic-stub")
+        yield container
+    finally:
+        try:
+            wrapped = container.get_wrapped_container()
+            if wrapped is not None:
+                wrapped.reload()
+                if wrapped.status == "running":
+                    # Let the mock finish writing and sending reports before removal.
+                    wrapped.kill(signal="SIGINT")
+                    wrapped.wait(timeout=300)
+        finally:
+            try:
+                container.stop()
+            finally:
+                if thread is not None:
+                    thread.join(timeout=10)
 
 
 @pytest.fixture(scope="module")
-def test_container():
-    specmatic_yaml_path = str(PROJECT_ROOT_PATH / "specmatic.yaml")
-    build_reports_path = str(PROJECT_ROOT_PATH / "build/reports/specmatic")
+def test_container(api_service, mock_container):
     container = (
-        DockerContainer("specmatic/specmatic")
+        specmatic_container()
         .with_command(["test"])
         .with_env("APP_URL", f"http://host.docker.internal:{APPLICATION_PORT}")
-        .with_volume_mapping(specmatic_yaml_path, "/usr/src/app/specmatic.yaml", mode="ro")
-        .with_volume_mapping(build_reports_path, "/usr/src/app/build/reports/specmatic", mode="rw")
-        .with_kwargs(extra_hosts={"host.docker.internal": "host-gateway"})
-        .waiting_for(LogMessageWaitStrategy("Tests run:"))
     )
-    container.start()
-    thread = stream_container_logs(container, name="specmatic-test")
-    yield container
-    container.stop()
-    thread.join()
+    thread = None
+    try:
+        container.start()
+        thread = stream_container_logs(container, name="specmatic-test")
+        yield container
+    finally:
+        try:
+            container.stop()
+        finally:
+            if thread is not None:
+                thread.join(timeout=10)
 
 
 @pytest.mark.skipif(
@@ -103,8 +135,16 @@ def test_container():
     reason="Run only on Linux CI; all platforms allowed locally",
 )
 def test_contract(api_service, mock_container, test_container):
+    try:
+        result = test_container.get_wrapped_container().wait(timeout=300)
+    except Exception as error:
+        stdout, stderr = test_container.get_logs()
+        logs = (stdout + stderr).decode("utf-8", errors="replace")
+        raise AssertionError(f"Could not wait for contract test completion; container logs:\n{logs}") from error
+
     stdout, stderr = test_container.get_logs()
-    stdout = stdout.decode("utf-8")
-    stderr = stderr.decode("utf-8")
-    if stderr or "Failures: 0" not in stdout:
-        raise AssertionError(f"Contract tests failed; container logs:\n{stdout}\n{stderr}")  # noqa: EM102
+    stdout = stdout.decode("utf-8", errors="replace")
+    stderr = stderr.decode("utf-8", errors="replace")
+    logs = f"Contract test container logs:\n{stdout}\n{stderr}"
+    assert result["StatusCode"] == 0, logs
+    assert "Failures: 0" in stdout, logs
