@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: python-wrapper
+          - name: pytest
             os: ubuntu-latest
             test-file: tests/contract/test_contract_fastapi.py
           - name: testcontainers
@@ -57,12 +57,12 @@ jobs:
       - name: Run tests
         run: coverage run --branch -m pytest ${{ matrix.test-file }} -v -s --junitxml contract-test-reports/TEST-${{ matrix.name }}-${{ matrix.os }}.xml
 
-      - name: Publish contract test report
-        uses: mikepenz/action-junit-report@v3
+      - name: Publish JUnit test results
+        uses: mikepenz/action-junit-report@v4
         if: always()
         with:
           report_paths: "**/contract-test-reports/TEST-*.xml"
-          check_name: Test results (${{ matrix.name }}, ${{ matrix.os }})
+          check_name: ${{ matrix.name }} results
 
       - name: Generate coverage report
         run: coverage html -d coverage-report

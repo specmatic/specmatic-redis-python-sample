@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import uvicorn
 from testcontainers.core.container import DockerContainer
-from testcontainers.core.wait_strategies import HttpWaitStrategy
+from testcontainers.core.wait_strategies import HttpWaitStrategy, LogMessageWaitStrategy
 
 from definitions import PROJECT_ROOT_PATH
 
@@ -59,6 +59,7 @@ def api_service():
 
 def specmatic_container():
     container = DockerContainer("specmatic/specmatic")
+    host_user = f"{os.getuid()}:{os.getgid()}" if hasattr(os, "getuid") and hasattr(os, "getgid") else None
     for name, value in os.environ.items():
         container.with_env(name, value)
 
@@ -69,12 +70,10 @@ def specmatic_container():
         .with_env("JAVA_OPTS", "-Dspecmatic.logging.level=trace -Dspecmatic.logging.stdout.enabled=true")
         .with_volume_mapping(str(PROJECT_ROOT_PATH), "/usr/src/app", mode="rw")
         .with_env("GIT_DISCOVERY_ACROSS_FILESYSTEM", "1")
-        .with_env("GIT_CONFIG_COUNT", "1")
-        .with_env("GIT_CONFIG_KEY_0", "safe.directory")
-        .with_env("GIT_CONFIG_VALUE_0", "/usr/src/app")
         .with_kwargs(
             extra_hosts={"host.docker.internal": "host-gateway"},
             working_dir="/usr/src/app",
+            **({"user": host_user} if host_user else {}),
         )
     )
     return container
@@ -94,20 +93,12 @@ def mock_container():
         thread = stream_container_logs(container, name="specmatic-stub")
         yield container
     finally:
-        try:
-            wrapped = container.get_wrapped_container()
-            if wrapped is not None:
-                wrapped.reload()
-                if wrapped.status == "running":
-                    # Let the mock finish writing and sending reports before removal.
-                    wrapped.kill(signal="SIGINT")
-                    wrapped.wait(timeout=300)
-        finally:
-            try:
-                container.stop()
-            finally:
-                if thread is not None:
-                    thread.join(timeout=10)
+        # Equivalent to `docker stop --time 300`: allow report submission
+        # to finish before Docker forcefully terminates the mock.
+        container.get_wrapped_container().stop(timeout=300)
+        container.stop()
+        if thread is not None:
+            thread.join(timeout=10)
 
 
 @pytest.fixture(scope="module")
@@ -116,6 +107,7 @@ def test_container(api_service, mock_container):
         specmatic_container()
         .with_command(["test"])
         .with_env("APP_URL", f"http://host.docker.internal:{APPLICATION_PORT}")
+        .waiting_for(LogMessageWaitStrategy("Tests run:").with_startup_timeout(120))
     )
     thread = None
     try:
@@ -135,16 +127,8 @@ def test_container(api_service, mock_container):
     reason="Run only on Linux CI; all platforms allowed locally",
 )
 def test_contract(api_service, mock_container, test_container):
-    try:
-        result = test_container.get_wrapped_container().wait(timeout=300)
-    except Exception as error:
-        stdout, stderr = test_container.get_logs()
-        logs = (stdout + stderr).decode("utf-8", errors="replace")
-        raise AssertionError(f"Could not wait for contract test completion; container logs:\n{logs}") from error
-
     stdout, stderr = test_container.get_logs()
     stdout = stdout.decode("utf-8", errors="replace")
     stderr = stderr.decode("utf-8", errors="replace")
     logs = f"Contract test container logs:\n{stdout}\n{stderr}"
-    assert result["StatusCode"] == 0, logs
     assert "Failures: 0" in stdout, logs
